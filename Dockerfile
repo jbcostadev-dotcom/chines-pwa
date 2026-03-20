@@ -38,7 +38,7 @@ RUN docker-php-ext-install \
     opcache
 
 # =============================================
-# Habilitar mod_rewrite do Apache (.htaccess)
+# Habilitar módulos do Apache
 # =============================================
 RUN a2enmod rewrite headers deflate
 
@@ -53,16 +53,25 @@ max_execution_time = 300\n\
 max_input_time = 300\n\
 session.save_path = /tmp\n\
 date.timezone = America/Sao_Paulo\n\
+open_basedir = /var/www/html/:/tmp/\n\
 ' > /usr/local/etc/php/conf.d/custom.ini
-
-# =============================================
-# Configurar open_basedir
-# =============================================
-RUN echo 'open_basedir=/var/www/html/:/tmp/' > /usr/local/etc/php/conf.d/basedir.ini
 
 # =============================================
 # Permitir .htaccess (AllowOverride All)
 # =============================================
 RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
+
+# =============================================
+# Copiar projeto para dentro da imagem
+# =============================================
+COPY . /var/www/html/
+
+# =============================================
+# Permissões
+# =============================================
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html \
+    && mkdir -p /var/www/html/uploads \
+    && chmod -R 775 /var/www/html/uploads
 
 EXPOSE 80

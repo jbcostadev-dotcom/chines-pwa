@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # =============================================
+  # Aplicação PHP + Apache
+  # =============================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cassino-app
+    ports:
+      - "80:80"
+    environment:
+      - DB_HOST=mysql
+      - DB_USER=cassino
+      - DB_PASS=Zreel123!
+      - DB_NAME=cassinonovo
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./uploads:/code/uploads
+    restart: unless-stopped
+    networks:
+      - cassino-network
+
+  # =============================================
+  # Banco de dados MySQL
+  # =============================================
+  mysql:
+    image: mysql:8.0
+    container_name: cassino-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootCassino2024!
+      MYSQL_DATABASE: cassinonovo
+      MYSQL_USER: cassino
+      MYSQL_PASSWORD: Zreel123!
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - cassino-network
+
+volumes:
+  mysql_data:
+
+networks:
+  cassino-network:
+    driver: bridge

@@ -26,13 +26,6 @@ RUN docker-php-ext-configure gd \
 # =============================================
 # Instalar extensões PHP necessárias
 # =============================================
-# mysqli / pdo_mysql  -> Banco de dados (database.php, crud.php, etc.)
-# curl                -> Payment gateways (ecompag, bspay, greepay), Telegram 2FA, game providers
-# gd                  -> Manipulação de imagens, QR codes (phpqrcode), getimagesize
-# mbstring            -> Strings UTF-8
-# zip                 -> Exportação de dados (exportar_usuarios.php com ZipArchive)
-# openssl             -> Criptografia AES-256-CBC (funcao.php CRIPT_AES)
-# opcache             -> Performance em produção
 RUN docker-php-ext-install \
     mysqli \
     pdo \
@@ -63,40 +56,13 @@ date.timezone = America/Sao_Paulo\n\
 ' > /usr/local/etc/php/conf.d/custom.ini
 
 # =============================================
-# Criar pasta e copiar projeto
+# Configurar open_basedir
 # =============================================
-RUN mkdir -p /code
-COPY . /code
-
-# Configurar open_basedir correto para o container
-RUN echo 'open_basedir=/code/:/tmp/' > /code/.user.ini
+RUN echo 'open_basedir=/var/www/html/:/tmp/' > /usr/local/etc/php/conf.d/basedir.ini
 
 # =============================================
-# Permissões
+# Permitir .htaccess (AllowOverride All)
 # =============================================
-RUN chown -R www-data:www-data /code \
-    && chmod -R 755 /code \
-    && mkdir -p /code/uploads \
-    && chmod -R 775 /code/uploads
-
-# =============================================
-# Apache: DocumentRoot -> /code
-# =============================================
-RUN sed -i 's|/var/www/html|/code|g' /etc/apache2/sites-available/000-default.conf
-
-# Permitir .htaccess global (AllowOverride All) + Segurança
-RUN echo '<Directory /code>\n\
-    Options FollowSymLinks\n\
-    AllowOverride All\n\
-    Require all granted\n\
-</Directory>\n\
-\n\
-<Directory /code/admin/services>\n\
-    Require all denied\n\
-</Directory>' > /etc/apache2/conf-available/custom.conf
-
-RUN a2enconf custom
-
-WORKDIR /code
+RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf
 
 EXPOSE 80
